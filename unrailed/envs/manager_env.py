@@ -8,11 +8,11 @@ class ResourcesEnv(gym.Env):
     def __init__(self, render_mode=None):
         super(ResourcesEnv, self).__init__()
         self.action_space = gym.spaces.MultiDiscrete(np.array([4, 4, 4, 4]))
-        self.wood = 0
-        self.rock = 0
-        self.rail = 0
+        self.wood = np.random.randint(0, 3)
+        self.rock = np.random.randint(0, 3)
+        self.rail = np.random.randint(0, 3)
         self.r_front = 3
-        self.temperature = 0
+        self.temperature = np.random.randint(0, 2)
         self.current_obs = [self.wood, self.rock, self.rail, self.r_front, self.temperature]
         self.reward = 0
         self.time = 100
@@ -36,10 +36,11 @@ class ResourcesEnv(gym.Env):
         self.temperature = 0
         self.reward = 0
         self.time = 100
-        self.current_obs = [self.wood, self.rock, self.rail, self.r_front, self.temperature]
+        self.current_obs = self.observation_space.sample()
         return self.current_obs, {}
 
     def step(self, action):
+        
         reward = 0
         done = False
         self.time = self.time - 1
@@ -49,6 +50,19 @@ class ResourcesEnv(gym.Env):
         cold_action = 3
         
         self.current_action = action
+
+        # Poner railes
+        if np.count_nonzero(np.array(action) == rail_action) > 1:
+            reward = reward - 100
+        if rail_action in action and self.rail > 0:
+            if self.rail == 1:
+                reward = reward + 4
+            if self.rail == 2:
+                reward = reward + 16 
+            if self.rail == 3:
+                reward = reward + 36
+            self.r_front = self.r_front + self.rail
+            self.rail = 0 
 
         #print("Actions [wood, rock, rail, cold]: ", str(action))
         # fabricacion de rail
@@ -68,30 +82,14 @@ class ResourcesEnv(gym.Env):
             self.rock = self.rock + 1
             reward = reward + 1
         
-        # Poner railes
-        if np.count_nonzero(np.array(action) == rail_action) > 1:
-            reward = reward - 100
-        if rail_action in action and self.rail == 3:
-            self.r_front = self.r_front + self.rail
-            reward = reward + 30
-            self.rail = 0 
-        
         # Descarrilmiento
         if self.r_front == 0:
             reward = reward - 10000
             done = True
 
         # Enfriar tren
-        if np.count_nonzero(np.array(action) == cold_action) > 1:
+        if np.count_nonzero(np.array(action) == cold_action) > 1 or (self.temperature < 2 and cold_action in action):
             reward = reward - 100
-            
-        if self.temperature == 2 and cold_action in action:
-            self.temperature = 0
-            reward = reward + 20
-
-        # Cambios de temperatura
-        if np.random.randint(0, 5) == 1:
-            self.temperature = self.temperature + 1
         
         # Explosion del tren
         if self.temperature == 3:
@@ -102,6 +100,10 @@ class ResourcesEnv(gym.Env):
         if self.temperature > 1 and cold_action in action:
             self.temperature = 0
             reward = reward + 5
+            
+        # Cambios de temperatura
+        elif np.random.randint(0, 5) == 1:
+            self.temperature = self.temperature + 1
         
         # Movimiento del tren 
         if np.random.randint(0, 5) == 1:
@@ -144,7 +146,8 @@ class ResourcesEnv(gym.Env):
         text_reward = self.font.render('Reward', True, (255, 255, 255))
         text_n_reward = self.font.render(str(self.reward), True, (255, 255, 255))               
         text_action = self.font.render(str(self.current_action), True, (255, 255, 255))               
-        text_time = self.font.render(str(self.time), True, (255, 255, 255))               
+        text_time = self.font.render('Time left', True, (255, 255, 255))
+        text_n_time = self.font.render(str(self.time), True, (255, 255, 255))               
         
         
         self.display.fill((0, 0, 0))
@@ -161,7 +164,8 @@ class ResourcesEnv(gym.Env):
         self.display.blit(text_reward, (550, 50))
         self.display.blit(text_n_reward, (550, 150))
         self.display.blit(text_action, (200, 300))
-        self.display.blit(text_time, (500, 300))
+        self.display.blit(text_time, (500, 250))
+        self.display.blit(text_n_time, (500, 300))
         self.clock.tick(2)
         pygame.display.flip()
         # print("------------------------------")
