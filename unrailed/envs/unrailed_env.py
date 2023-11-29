@@ -188,7 +188,8 @@ class UnrailedEnv(gym.Env):
                     pygame.draw.rect(self.display, (0, 0, 0), (j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size))
                 else:
                     self.display.blit(self.population[self.grid[i, j]]["color"], [self.cell_size*j, self.cell_size*i])
-                    
+                
+                print([i, j], self.agents_pos[0][:2])
                 # Draw players
                 if [i, j] == self.agents_pos[0][:2]:
                     self.display.blit(pygame.transform.rotate(self.population["PLAYER0"]["color"], self.agents_pos[0][2]), [self.cell_size*j, self.cell_size*i])
