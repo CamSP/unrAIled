@@ -226,6 +226,27 @@ class UnrailedEnv(ParallelEnv):
             13: [18],
             14: [5],
         }
+        self.obs_args = {
+            "vision": [0, 25],
+            "position": [25, 26],
+            "orientation": 27,
+            "item": 28,
+            "wood_item": [29, 30],
+            "rock_item": [31, 32],
+            "pickaxe": [33, 34],
+            "axe": [35, 36],
+            "bucket": [37, 38],
+            "full_bucket": [39, 40],
+            "rock_block": [41, 42],
+            "tree_block": [43, 44],
+            "water": [45, 46],
+            "refri": [47, 48],
+            "deposit": [49, 50],
+            "factory": [51, 52],
+            "riel": [53, 54],
+            "house": [55, 56],
+            "task": 57,
+        }
         
         
         self.agents_pos = [
@@ -251,57 +272,64 @@ class UnrailedEnv(ParallelEnv):
                 
         self.rewards = {agent: 0 for agent in self.agents}
         
+
         self.observations = {
-            self.agents[i]: {
-            "vision": self.getAgentView(self.agents_pos[i][0], self.agents_pos[i][1]),
-            "position": [self.agents_pos[i][0], self.agents_pos[i][1]],
-            "orientation": self.agents_pos[i][2],
-            "item": 0,
-            "wood_item": self.find_resource(self.grid, self.train["ENGINE"], 9),
-            "rock_item": self.find_resource(self.grid, self.train["ENGINE"], 10),
-            "pickaxe": self.find_resource(self.grid, self.train["ENGINE"], 12),
-            "axe": self.find_resource(self.grid, self.train["ENGINE"], 11),
-            "bucket": self.find_resource(self.grid, self.train["ENGINE"], 13),
-            "full_bucket": self.find_resource(self.grid, self.train["ENGINE"],14),
-            "rock_block": self.find_resource(self.grid, self.train["ENGINE"], 3),
-            "tree_block": self.find_resource(self.grid, self.train["ENGINE"], 2),
-            "water": self.find_resource(self.grid, self.train["ENGINE"], 5),
-            "refri": self.train["TANK"],
-            "deposit": self.train["STORAGE"],
-            "factory": self.train["CRAFTING"],
-            "riel": self.path[-1],
-            "house": self.end,
-            "TASK": i,
-        } for i in range(len(self.agents)) 
+            self.agents[i]:  list(np.zeros([1, 58])[0].astype(np.int8)) for i in range(len(self.agents)) 
         }
+        for i, agent in enumerate(self.agents):
+            self.observations[agent][self.obs_args["vision"][0]:self.obs_args["vision"][1]+1] = list(self.getAgentView(self.agents_pos[0][0], self.agents_pos[0][1]).reshape((1, 25))[0])
+            self.observations[agent][self.obs_args["position"][0]:self.obs_args["position"][1]+1] = [self.agents_pos[i][0], self.agents_pos[i][1]]
+            self.observations[agent][self.obs_args["orientation"]] = self.agents_pos[i][2]
+            self.observations[agent][self.obs_args["item"]] = 0
+            self.observations[agent][self.obs_args["wood_item"][0]:self.obs_args["wood_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 9)
+            self.observations[agent][self.obs_args["rock_item"][0]:self.obs_args["rock_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 10)
+            self.observations[agent][self.obs_args["pickaxe"][0]:self.obs_args["pickaxe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 12)
+            self.observations[agent][self.obs_args["axe"][0]:self.obs_args["axe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 11)
+            self.observations[agent][self.obs_args["bucket"][0]:self.obs_args["bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 13)
+            self.observations[agent][self.obs_args["full_bucket"][0]:self.obs_args["full_bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"],14)
+            self.observations[agent][self.obs_args["rock_block"][0]:self.obs_args["rock_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 3)
+            self.observations[agent][self.obs_args["tree_block"][0]:self.obs_args["tree_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 2)
+            self.observations[agent][self.obs_args["water"][0]:self.obs_args["water"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 5)
+            self.observations[agent][self.obs_args["refri"][0]:self.obs_args["refri"][1]+1] = self.train["TANK"]
+            self.observations[agent][self.obs_args["deposit"][0]:self.obs_args["deposit"][1]+1] = self.train["STORAGE"]
+            self.observations[agent][self.obs_args["factory"][0]:self.obs_args["factory"][1]+1] = self.train["CRAFTING"]
+            self.observations[agent][self.obs_args["riel"][0]:self.obs_args["riel"][1]+1] = self.path[-1]
+            self.observations[agent][self.obs_args["house"][0]:self.obs_args["house"][1]+1] = self.end
+            self.observations[agent][56] = 0
         
+                
         if render_mode == "human":
             self.display = pygame.display.set_mode((self.cell_size*self.width, self.cell_size*self.heigth))
             pygame.display.set_caption("Unrailed")
+        
 
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
-        obs = Dict({
-            "vision": Box(low=0, high=15, shape=(5,5)),
-            "position": MultiDiscrete([45, 20]),
-            "orientation": Discrete(4),
-            "item": Discrete(7),
-            "wood_item": MultiDiscrete([45, 20]),
-            "rock_item": MultiDiscrete([45, 20]),
-            "pickaxe": MultiDiscrete([45, 20]),
-            "axe": MultiDiscrete([45, 20]),
-            "bucket": MultiDiscrete([45, 20]),
-            "full_bucket": MultiDiscrete([45, 20]),
-            "rock_block": MultiDiscrete([45, 20]),
-            "tree_block": MultiDiscrete([45, 20]),
-            "water": MultiDiscrete([45, 20]),
-            "refri": MultiDiscrete([45, 20]),
-            "deposit": MultiDiscrete([45, 20]),
-            "factory": MultiDiscrete([45, 20]),
-            "riel": MultiDiscrete([45, 20]),
-            "house": MultiDiscrete([45, 20]),
-            "TASK": Discrete(4)
-        })
+
+        obs = MultiDiscrete([18, 18, 18, 18, 18, 
+                             18, 18, 18, 18, 18,
+                             18, 18, 18, 18, 18,
+                             18, 18, 18, 18, 18,
+                             18, 18, 18, 18, 18, # vision
+                             45, 20, # position
+                             3,  # orientation
+                             6,  # item
+                             45, 20, # wood_item
+                             45, 20, # rock_item
+                             45, 20, # pickaxe
+                             45, 20, # axe
+                             45, 20, # bucket
+                             45, 20, # full_bucket
+                             45, 20, # rock_block
+                             45, 20, # tree_block
+                             45, 20, # water
+                             45, 20, # refri
+                             45, 20, # deposit
+                             45, 20, # factory
+                             45, 20, # riel
+                             45, 20, # house
+                             3 # task
+                             ])
         return obs
 
     @functools.lru_cache(maxsize=None)
@@ -366,7 +394,8 @@ class UnrailedEnv(ParallelEnv):
         pass
 
     def reset(self, seed=None, options=None):
-        
+        self.possible_agents = ["player_" + str(r) for r in range(4)]
+        self.agents = ["player_" + str(r) for r in range(4)]
         self.rewards = {agent: 0 for agent in self.agents}
         self.grid = np.array([
             [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,2,2,2,2],
@@ -390,8 +419,7 @@ class UnrailedEnv(ParallelEnv):
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3],
             [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3]
         ])
-        self.agents = ["player_" + str(r) for r in range(4)]
-        self.possible_agents = ["player_" + str(r) for r in range(4)]
+        
 
         self.train = {
             "ENGINE": (9, 5),
@@ -417,30 +445,27 @@ class UnrailedEnv(ParallelEnv):
             "storage": 3,
             "front": len(self.path) - self.path.index(self.train["ENGINE"])
         }
-        
-        self.observations = {
-            self.agents[i]: {
-            "vision": self.getAgentView(self.agents_pos[i][0], self.agents_pos[i][1]),
-            "position": [self.agents_pos[i][0], self.agents_pos[i][1]],
-            "orientation": self.agents_pos[i][2],
-            "item": 0,
-            "wood_item": self.find_resource(self.grid, self.train["ENGINE"], 9),
-            "rock_item": self.find_resource(self.grid, self.train["ENGINE"], 10),
-            "pickaxe": self.find_resource(self.grid, self.train["ENGINE"], 12),
-            "axe": self.find_resource(self.grid, self.train["ENGINE"], 11),
-            "bucket": self.find_resource(self.grid, self.train["ENGINE"], 13),
-            "full_bucket": self.find_resource(self.grid, self.train["ENGINE"],14),
-            "rock_block": self.find_resource(self.grid, self.train["ENGINE"], 3),
-            "tree_block": self.find_resource(self.grid, self.train["ENGINE"], 2),
-            "water": self.find_resource(self.grid, self.train["ENGINE"], 5),
-            "refri": self.train["TANK"],
-            "deposit": self.train["STORAGE"],
-            "factory": self.train["CRAFTING"],
-            "riel": self.path[-1],
-            "house": self.end,
-            "TASK": i,
-        } for i in range(len(self.agents)) 
-        }
+
+        for i, agent in enumerate(self.agents):
+            self.observations[agent][self.obs_args["vision"][0]:self.obs_args["vision"][1]+1] = list(self.getAgentView(self.agents_pos[0][0], self.agents_pos[0][1]).reshape((1, 25))[0])
+            self.observations[agent][self.obs_args["position"][0]:self.obs_args["position"][1]+1] = [self.agents_pos[i][0], self.agents_pos[i][1]]
+            self.observations[agent][self.obs_args["orientation"]] = self.agents_pos[i][2]
+            self.observations[agent][self.obs_args["item"]] = 0
+            self.observations[agent][self.obs_args["wood_item"][0]:self.obs_args["wood_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 9)
+            self.observations[agent][self.obs_args["rock_item"][0]:self.obs_args["rock_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 10)
+            self.observations[agent][self.obs_args["pickaxe"][0]:self.obs_args["pickaxe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 12)
+            self.observations[agent][self.obs_args["axe"][0]:self.obs_args["axe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 11)
+            self.observations[agent][self.obs_args["bucket"][0]:self.obs_args["bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 13)
+            self.observations[agent][self.obs_args["full_bucket"][0]:self.obs_args["full_bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"],14)
+            self.observations[agent][self.obs_args["rock_block"][0]:self.obs_args["rock_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 3)
+            self.observations[agent][self.obs_args["tree_block"][0]:self.obs_args["tree_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 2)
+            self.observations[agent][self.obs_args["water"][0]:self.obs_args["water"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 5)
+            self.observations[agent][self.obs_args["refri"][0]:self.obs_args["refri"][1]+1] = self.train["TANK"]
+            self.observations[agent][self.obs_args["deposit"][0]:self.obs_args["deposit"][1]+1] = self.train["STORAGE"]
+            self.observations[agent][self.obs_args["factory"][0]:self.obs_args["factory"][1]+1] = self.train["CRAFTING"]
+            self.observations[agent][self.obs_args["riel"][0]:self.obs_args["riel"][1]+1] = self.path[-1]
+            self.observations[agent][self.obs_args["house"][0]:self.obs_args["house"][1]+1] = self.end
+            self.observations[agent][56] = 0
         
         infos = {agent: {} for agent in self.agents}
         
@@ -470,23 +495,23 @@ class UnrailedEnv(ParallelEnv):
             return (-1, -1)
         
     def getAgentView(self, x, y):
-        row_start = max(0, x - 1)
-        row_end = min(self.grid.shape[0], x + 2)
-        col_start = max(0, y - 1)
-        col_end = min(self.grid.shape[1], y + 2)
+        row_start = max(0, x - 2)
+        row_end = min(self.grid.shape[0], x + 3)
+        col_start = max(0, y - 2)
+        col_end = min(self.grid.shape[1], y + 3)
 
         # Crear una matriz de -1 con las dimensiones de la ventana
-        view = np.full((3, 3), -1)
+        view = np.full((5, 5), -1)
 
         # Obtener las coordenadas válidas en la ventana
-        view_row_start = max(0, 1 - x)
+        view_row_start = max(0, 2 - x)
         view_row_end = view_row_start + (row_end - row_start)
-        view_col_start = max(0, 1 - y)
+        view_col_start = max(0, 2 - y)
         view_col_end = view_col_start + (col_end - col_start)
 
         # Actualizar la parte válida de la ventana con los valores de la matriz
         view[view_row_start:view_row_end, view_col_start:view_col_end] = self.grid[row_start:row_end, col_start:col_end]
-        return view
+        return view.flatten()
 
     def step(self, actions):        
         # rewards for all agents are placed in the rewards dictionary to be returned
@@ -503,7 +528,6 @@ class UnrailedEnv(ParallelEnv):
             initial_agent_observation = self.observations[agent].copy()
             perform_action = False    
             # Movimiento
-            print(actions)
             if actions[agent] in self.actions[:4]:
                 self.player_move(actions[agent], i)
                 
@@ -513,25 +537,25 @@ class UnrailedEnv(ParallelEnv):
                 for j, orientation in enumerate(self.orientations):
                     
                     if self.agents_pos[i][2] == orientation:  
-                        if near[j][0] == 17 and self.state["wood"] < 3 and initial_agent_observation["item"] == 9:
+                        if near[j][0] == 17 and self.state["wood"] < 3 and initial_agent_observation[self.obs_args["item"]] == 9:
                             self.state["wood"] = self.state["wood"]+1
-                            self.observations[agent]["item"] = 0
+                            self.observations[agent][self.obs_args["item"]] = 0
                             reward = reward + self.rewards_values["complete_task"]
                             perform_action = True
                             change_state = True
                             continue
-                        elif near[j][0] == 17 and self.state["iron"] < 3 and initial_agent_observation["item"] == 10:
+                        elif near[j][0] == 17 and self.state["iron"] < 3 and initial_agent_observation[self.obs_args["item"]] == 10:
                             self.state["iron"] = self.state["iron"]+1
-                            self.observations[agent]["item"] = 0
+                            self.observations[agent][self.obs_args["item"]] = 0
                             reward = reward + self.rewards_values["complete_task"]
                             perform_action = True
                             change_state = True
                             continue
 
-                        elif near[j][0] == 16 and self.state["storage"] > 0 and initial_agent_observation["item"] != 8:
+                        elif near[j][0] == 16 and self.state["storage"] > 0 and initial_agent_observation[self.obs_args["item"]] != 8:
                             self.state["storage"] = self.state["storage"]-1
-                            self.observations[agent]["item"] = 8
-                            if initial_agent_observation["TASK"] == 2:
+                            self.observations[agent][self.obs_args["item"]] = 8
+                            if initial_agent_observation[56] == 2:
                                 reward = reward + self.rewards_values["complete_task"]
                             else:
                                 reward = reward + self.rewards_values["pick_wrong_item"]   
@@ -542,17 +566,17 @@ class UnrailedEnv(ParallelEnv):
                     continue
                 
                 
-                if initial_agent_observation["item"] != 0 and element_in_position == 1:
-                    self.grid[self.agents_pos[i][0]][self.agents_pos[i][1]] = initial_agent_observation["item"]
-                    self.observations[agent]["item"] = 0
+                if initial_agent_observation[self.obs_args["item"]] != 0 and element_in_position == 1:
+                    self.grid[self.agents_pos[i][0]][self.agents_pos[i][1]] = initial_agent_observation[self.obs_args["item"]]
+                    self.observations[agent][self.obs_args["item"]] = 0
                 
-                if initial_agent_observation["item"] == element_in_position:
+                if initial_agent_observation[self.obs_args["item"]] == element_in_position:
                     reward = reward + self.rewards_values["pick_same_item"]
                 # Si esta en un lugar con un item
                 if element_in_position in self.pickeable:
                     # Si el item es de la tarea, lo recompensa
                     
-                    if element_in_position in self.valid_items[initial_agent_observation["TASK"]]:
+                    if element_in_position in self.valid_items[initial_agent_observation[56]]:
                         reward = reward + self.rewards_values["pick_item"]
                         
                     # Si el item no es de la tarea, lo castiga
@@ -561,10 +585,10 @@ class UnrailedEnv(ParallelEnv):
                         
                     # Se actualiza el mapa
                     self.grid[self.agents_pos[i][0]][self.agents_pos[i][1]] = 1 
-                    self.observations[agent]["item"] = element_in_position
+                    self.observations[agent][self.obs_args["item"]] = element_in_position
 
                 # Si el rail se coloca en al lado del ultmo rail, se añade al path
-                if initial_agent_observation["item"] == 8:
+                if initial_agent_observation[self.obs_args["item"]] == 8:
                     if (abs(self.agents_pos[i][0] - self.path[-1][0]) == 1 and self.agents_pos[i][1] == self.path[-1][1]) or (self.agents_pos[i][0] == self.path[-1][0] and abs(self.agents_pos[i][1] - self.path[-1][1]) == 1):
                         self.path.append((self.agents_pos[i][0],self.agents_pos[i][1]))
                         # Llega al final
@@ -572,20 +596,20 @@ class UnrailedEnv(ParallelEnv):
                             done = True
                       
             # Romper/Recoger                        
-            if actions[agent] == 5 and initial_agent_observation["item"] in self.tools:
+            if actions[agent] == 5 and initial_agent_observation[self.obs_args["item"]] in self.tools:
                 for j, orientation in enumerate(self.orientations):
                     if self.agents_pos[i][2] == orientation:                        
                         # Evalua que el item que tenga sea valido para romper el bloque al que apunta
-                        if near[j][0] in self.valid_tools_targets[initial_agent_observation["item"]] :#and near[j][0] in self.valid_action_targets[initial_agent_observation["TASK"]]:
+                        if near[j][0] in self.valid_tools_targets[initial_agent_observation[self.obs_args["item"]]] :#and near[j][0] in self.valid_action_targets[initial_agent_observation["task"]]:
                             
                             # Si es el cubo y esta frente a agua, se llena el cubo
-                            if initial_agent_observation["item"] == 13:
-                                self.observations[agent]["item"] = 14
+                            if initial_agent_observation[self.obs_args["item"]] == 13:
+                                self.observations[agent][self.obs_args["item"]] = 14
                                 reward = reward + self.rewards_values["fill_bucket"]
                                 
                             # Si es el cubo lleno y esta frente a la locomotora, se vacia el cubo y se completa la tarea
-                            elif initial_agent_observation["item"] == 14:
-                                self.observations[agent]["item"] = 13
+                            elif initial_agent_observation[self.obs_args["item"]] == 14:
+                                self.observations[agent][self.obs_args["item"]] = 13
                                 reward = reward + self.rewards_values["complete_task"]
                                 self.state["temp"] = 0
                                 change_state = True
@@ -601,8 +625,8 @@ class UnrailedEnv(ParallelEnv):
             
             # Set new window 
             view = self.getAgentView(self.agents_pos[i][0], self.agents_pos[i][1])
-            self.observations[agent]["view"] = view
-            
+            self.observations[agent][self.obs_args["vision"][0]:self.obs_args["vision"][1]] = view
+            print(self.rewards)
             self.rewards[agent] = self.rewards[agent] + reward
         
         # update temp            
@@ -662,12 +686,26 @@ class UnrailedEnv(ParallelEnv):
         }
         
 
-        # current observation is just the other player's most recent action
+        # current observation is just the other player's most recent action            
         for i, agent in enumerate(self.agents):
-            self.observations[agent]["position"] = [self.agents_pos[i][0], self.agents_pos[i][1]]
-            for state in list(new_states.keys()):
-                self.observations[agent][state] = new_states[state]
-            self.observations[agent]["TASK"] = i
+            self.observations[agent][self.obs_args["position"][0]:self.obs_args["position"][1]+1] = [self.agents_pos[i][0], self.agents_pos[i][1]]
+            self.observations[agent][self.obs_args["orientation"]] = self.agents_pos[i][2]
+            self.observations[agent][self.obs_args["wood_item"][0]:self.obs_args["wood_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 9)
+            self.observations[agent][self.obs_args["rock_item"][0]:self.obs_args["rock_item"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 10)
+            self.observations[agent][self.obs_args["pickaxe"][0]:self.obs_args["pickaxe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 12)
+            self.observations[agent][self.obs_args["axe"][0]:self.obs_args["axe"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 11)
+            self.observations[agent][self.obs_args["bucket"][0]:self.obs_args["bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 13)
+            self.observations[agent][self.obs_args["full_bucket"][0]:self.obs_args["full_bucket"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"],14)
+            self.observations[agent][self.obs_args["rock_block"][0]:self.obs_args["rock_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 3)
+            self.observations[agent][self.obs_args["tree_block"][0]:self.obs_args["tree_block"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 2)
+            self.observations[agent][self.obs_args["water"][0]:self.obs_args["water"][1]+1] = self.find_resource(self.grid, self.train["ENGINE"], 5)
+            self.observations[agent][self.obs_args["refri"][0]:self.obs_args["refri"][1]+1] = self.train["TANK"]
+            self.observations[agent][self.obs_args["deposit"][0]:self.obs_args["deposit"][1]+1] = self.train["STORAGE"]
+            self.observations[agent][self.obs_args["factory"][0]:self.obs_args["factory"][1]+1] = self.train["CRAFTING"]
+            self.observations[agent][self.obs_args["riel"][0]:self.obs_args["riel"][1]+1] = self.path[-1]
+            self.observations[agent][self.obs_args["house"][0]:self.obs_args["house"][1]+1] = self.end
+            self.observations[agent][56] = 0
+        
             
                 
         
@@ -687,31 +725,31 @@ class UnrailedEnv(ParallelEnv):
 
 # pygame.init()
 
-# # Crear el entorno Gym
-# env = UnrailedEnv(render_mode="human")
+# Crear el entorno Gym
+env = UnrailedEnv(render_mode="human")
 
-# # Bucle principal
-# running = True
-# while running:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
-#         elif event.type == pygame.KEYDOWN:
-#             if event.key == pygame.K_UP:
-#                 _, _, done, _, _ = env.step([0,0,0,0])
-#             elif event.key == pygame.K_DOWN:
-#                 _, _, done, _, _ = env.step([1,1,1,1])
-#             elif event.key == pygame.K_LEFT:
-#                 _, _, done, _, _ = env.step([2,2,2,2])
-#             elif event.key == pygame.K_RIGHT:
-#                 _, _, done, _, _ = env.step([3,3,3,3])
-#             elif event.key == pygame.K_q:
-#                 _, _, done, _, _ = env.step([4,4,4,4])
-#             elif event.key == pygame.K_e:
-#                 _, _, done, _, _ = env.step([5,5,5,5])
-#             # if done:
-#             #     env.reset()
+# Bucle principal
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                _, _, done, _, _ = env.step({'player_0': 0, 'player_1': 0, 'player_2': 0, 'player_3': 0})
+            elif event.key == pygame.K_DOWN:
+                _, _, done, _, _ = env.step({'player_0': 1, 'player_1': 1, 'player_2': 1, 'player_3': 1})
+            elif event.key == pygame.K_LEFT:
+                _, _, done, _, _ = env.step({'player_0': 2, 'player_1': 2, 'player_2': 2, 'player_3': 2})
+            elif event.key == pygame.K_RIGHT:
+                _, _, done, _, _ = env.step({'player_0': 3, 'player_1': 3, 'player_2': 3, 'player_3': 3})
+            elif event.key == pygame.K_q:
+                _, _, done, _, _ = env.step({'player_0': 4, 'player_1': 4, 'player_2': 4, 'player_3': 4})
+            elif event.key == pygame.K_e:
+                _, _, done, _, _ = env.step({'player_0': 5, 'player_1': 5, 'player_2': 5, 'player_3': 5})
+            # if done:
+            #     env.reset()
     
-#     env.render()
+    env.render()
     
 #pygame.quit()
